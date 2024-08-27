@@ -7,10 +7,9 @@ public class PlayerMover : MonoBehaviour
 {
     public event Action<Vector2> OnInputVelocityCompute;
 
+    private bool _isInWater;
     private bool _isHandlingInput;
     [SerializeField] private bool _isFacingRight;
-
-    [SerializeField] private float _movementSpeed;
 
     private Vector2 _lastVelocity;
 
@@ -18,10 +17,14 @@ public class PlayerMover : MonoBehaviour
 
     private Joystick _joystick;
 
+    private PlayerJumper _playerJumper;
+    private PlayerCharacteristics _playerCharacteristics;
+
     [Inject]
-    private void Initialize(Joystick joystick)
+    private void Initialize(PlayerCharacteristics playerCharacterisics, Joystick joystick)
     {
         _joystick = joystick;
+        _playerCharacteristics = playerCharacterisics;
     }
 
     private void Awake()
@@ -37,6 +40,13 @@ public class PlayerMover : MonoBehaviour
         {
             Debug.LogError($"the gameObject {gameObject} has missed inportant field Joystick");
         }
+
+        _playerJumper = GetComponent<PlayerJumper>();
+
+        if (_playerJumper is null)
+        {
+            Debug.LogError($"the gameObject {gameObject} has missed component PlayerJumper");
+        }
     }
 
     private void Update()
@@ -45,7 +55,10 @@ public class PlayerMover : MonoBehaviour
         {
             Vector2 joystickInputValues = _joystick.Direction.normalized;
 
-            Move(joystickInputValues);
+            if (_lastVelocity != Vector2.zero)
+            {
+                Move(joystickInputValues);
+            }
 
             if (joystickInputValues != _lastVelocity)
             {
@@ -56,9 +69,34 @@ public class PlayerMover : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        if (_playerJumper is not null)
+        {
+            _playerJumper.OnWateringStateChanged += HandleWateringStateChangings;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (_playerJumper is not null)
+        {
+            _playerJumper.OnWateringStateChanged -= HandleWateringStateChangings;
+        }
+    }
+
+    private void HandleWateringStateChangings(bool isInWater)
+    {
+        _isInWater = isInWater;
+    }
+
     private void Move(Vector2 direction)
     {
-        _rigidbody.velocity = direction * _movementSpeed;
+        Vector2 newVelocity = _isInWater
+            ? new Vector2(direction.x, direction.y) * _playerCharacteristics.Speed
+            : new Vector2(direction.x * _playerCharacteristics.Speed, _rigidbody.velocity.y);
+
+        _rigidbody.velocity = newVelocity;
 
         if ((_isFacingRight && direction.x < 0) 
             || (!_isFacingRight && direction.x > 0))

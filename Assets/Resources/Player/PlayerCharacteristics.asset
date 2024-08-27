@@ -12,6 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d9c787b6e5399e4ea4384752501d723, type: 3}
   m_Name: PlayerCharacteristics
   m_EditorClassIdentifier: 
-  _damage: 2
-  _rainforcement: 0
-  _energyRegeneration: 0
+  _damageLvl: 1
+  _armorLvl: 1
+  _speedLvl: 1
+  _damage: 15
+  _maxHealth: 100
+  _armor: 1
+  _speed: 3
